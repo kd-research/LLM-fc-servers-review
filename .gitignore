@@ -1,2 +1,6 @@
 !/.cache/.keep
 /.cache/*
+!/notebooks/.keep
+/notebooks/*
+
+.env
