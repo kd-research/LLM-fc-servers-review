@@ -1,0 +1,60 @@
+name: ollama-jupyter
+
+services:
+  ollama:
+    image: ollama/ollama
+    user: "${UID}:${GID}"
+    ports:
+      - "11434"
+    networks:
+      internal_network:
+        aliases:
+          - ollama
+    volumes:
+      - ./.cache/ollama:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+              driver: nvidia
+              count: 1
+
+  llama-cpp-python:
+    image: llama-cpp:full
+    user: "${UID}:${GID}"
+    command: --server --host 0.0.0.0 -m /models/Meta-Llama-3-8B-Instruct-Q4_K_M.gguf
+    ports:
+      - "8000"
+    networks:
+      internal_network:
+        aliases:
+          - llamacpp
+    volumes:
+      - /home/kaidong/.llama-cpp/models:/models
+    environment:
+      - MODEL=/models/Meta-Llama-3-8B-Instruct-Q4_K_M.gguf
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+              driver: nvidia
+              count: 1
+
+  jupyter:
+    image: jupyter/base-notebook
+    ports:
+      - "8888:8888"
+    networks:
+      - internal_network
+    volumes:
+      - ./notebooks:/home/jovyan/work
+      - ./configs/jupyter_notebook_config.py:/home/jovyan/.jupyter/jupyter_notebook_config.py
+    env_file:
+      - .env
+
+networks:
+  internal_network:
+
+
