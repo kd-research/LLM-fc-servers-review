@@ -1,18 +1,32 @@
-name: llama-cpp-jupyter
+name: llama-cpp-python-jupyter
 
 services:
   llama-cpp:
-    image: ghcr.io/ggerganov/llama.cpp:full-cuda
+    build: 
+      context: .
+      dockerfile: ./llama-cpp-python.cuda.dockerfile
     user: "${UID}:${GID}"
-    command: --server --host 0.0.0.0 --port 8000 -m ${MODEL}
     ports:
       - "8000"
+    command: 
+      - python3 
+      - -m 
+      - llama_cpp.server
+      - --model
+      - /models/${MODELSPEC}
+      - --hf_pretrained_model_name_or_path
+      - /tokenizers
+      - --chat_format
+      - functionary-v1
+      - --n_gpu_layers
+      - "-1"
     networks:
       internal_network:
         aliases:
           - llm
     volumes:
-      - /home/kaidong/.llama-cpp/models:/models
+      - ${MODELPATH}:/models
+      - ${TOKENIZERPATH}:/tokenizers
     env_file:
       - .env
     deploy:
@@ -24,7 +38,9 @@ services:
               count: 1
 
   jupyter:
-    image: jupyter/base-notebook
+    build: 
+      context: .
+      dockerfile: ./jupyter-lab.dockerfile
     ports:
       - "8888:8888"
     networks:
